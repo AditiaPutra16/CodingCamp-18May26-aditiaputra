@@ -1,0 +1,351 @@
+/* ── RESET / NORMALISE ── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── BASE ── */
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  background-color: #f0f2f5;
+  color: #1a1a2e;
+  min-height: 100vh;
+}
+
+/* ── DASHBOARD GRID ── */
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ── RESPONSIVE BREAKPOINT ── */
+
+@media (max-width: 767px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── WIDGET CARDS ── */
+
+.dashboard-grid section {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+}
+
+/* ── HEADINGS ── */
+
+h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #1a1a2e;
+}
+
+/* ── GREETING WIDGET ── */
+
+#greeting-text {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: #4a5568;
+  margin-bottom: 4px;
+}
+
+#clock-time {
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  line-height: 1.1;
+  color: #1a1a2e;
+  margin-bottom: 4px;
+}
+
+#clock-date {
+  font-size: 0.9375rem;
+  color: #718096;
+}
+
+/* ── FOCUS TIMER WIDGET ── */
+
+#timer-display {
+  font-size: 40px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+  color: #1a1a2e;
+  margin-bottom: 8px;
+}
+
+#timer-message {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #38a169;
+  margin-bottom: 12px;
+}
+
+#focus-timer .button-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+/* Timer buttons sit directly in the section — target them specifically */
+#timer-start,
+#timer-stop,
+#timer-reset {
+  margin-top: 12px;
+  margin-right: 8px;
+}
+
+/* ── TODO LIST WIDGET ── */
+
+#todo-form {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+#todo-input {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+#todo-items {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.todo-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.todo-item:last-child {
+  border-bottom: none;
+}
+
+.todo-check {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #4a90e2;
+}
+
+.todo-desc {
+  flex: 1 1 0;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.todo-desc.completed,
+.todo-desc[style*="line-through"] {
+  text-decoration: line-through;
+  opacity: 0.5;
+}
+
+.todo-edit-input {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.todo-item-error {
+  width: 100%;
+  color: #e53e3e;
+  font-size: 0.875rem;
+}
+
+#todo-storage-warning {
+  color: #e53e3e;
+  font-size: 0.875rem;
+  margin-top: 8px;
+}
+
+#todo-error {
+  width: 100%;
+  color: #e53e3e;
+  font-size: 0.875rem;
+}
+
+/* ── QUICK LINKS WIDGET ── */
+
+#links-form {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+#link-label-input {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+
+#link-url-input {
+  flex: 2 1 180px;
+  min-width: 0;
+}
+
+#links-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.quick-link-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.quick-link-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  background-color: #ebf4ff;
+  color: #2b6cb0;
+  border: 1px solid #bee3f8;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.quick-link-btn:hover {
+  background-color: #bee3f8;
+  border-color: #90cdf4;
+}
+
+.quick-link-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background-color: transparent;
+  color: #a0aec0;
+  border: 1px solid #e2e8f0;
+  border-radius: 50%;
+  font-size: 0.875rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.quick-link-delete-btn:hover {
+  background-color: #fed7d7;
+  color: #c53030;
+  border-color: #feb2b2;
+}
+
+#links-error {
+  width: 100%;
+  color: #e53e3e;
+  font-size: 0.875rem;
+}
+
+#links-storage-warning {
+  color: #e53e3e;
+  font-size: 0.875rem;
+  margin-top: 8px;
+}
+
+/* ── BUTTONS (shared) ── */
+
+button {
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e0;
+  background-color: #edf2f7;
+  color: #2d3748;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
+}
+
+button:hover {
+  background-color: #e2e8f0;
+  border-color: #a0aec0;
+}
+
+button[type="submit"],
+#timer-start {
+  background-color: #4a90e2;
+  color: #ffffff;
+  border-color: #3a7bd5;
+}
+
+button[type="submit"]:hover,
+#timer-start:hover {
+  background-color: #3a7bd5;
+  border-color: #2f6bbf;
+}
+
+/* ── INPUTS (shared) ── */
+
+input[type="text"],
+input[type="url"] {
+  padding: 8px 12px;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  color: #2d3748;
+  background-color: #ffffff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  width: 100%;
+}
+
+input[type="text"]:focus,
+input[type="url"]:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+}
+
+/* ── ERROR / WARNING PARAGRAPHS ── */
+
+p[id$="-error"],
+p[id$="-warning"],
+p.todo-item-error {
+  color: #e53e3e;
+  font-size: 0.875rem;
+}
+
+/* Elements with [hidden] attribute are not displayed */
+[hidden] {
+  display: none !important;
+}

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Todo-Life Dashboard</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <script src="js/app.js" defer></script>
+  </head>
+  <body>
+    <main class="dashboard-grid">
+
+      <section id="greeting">
+        <h2>Greeting</h2>
+        <p id="greeting-text"></p>
+        <p id="clock-time"></p>
+        <p id="clock-date"></p>
+      </section>
+
+      <section id="focus-timer">
+        <h2>Focus Timer</h2>
+        <p id="timer-display">25:00</p>
+        <p id="timer-message" hidden></p>
+        <button id="timer-start">Start</button>
+        <button id="timer-stop">Stop</button>
+        <button id="timer-reset">Reset</button>
+      </section>
+
+      <section id="todo-list">
+        <h2>To-Do List</h2>
+        <form id="todo-form">
+          <input id="todo-input" type="text" maxlength="500" placeholder="Add a new task…" />
+          <button type="submit">Add</button>
+          <p id="todo-error" hidden></p>
+        </form>
+        <ul id="todo-items"></ul>
+        <p id="todo-storage-warning" hidden></p>
+      </section>
+
+      <section id="quick-links">
+        <h2>Quick Links</h2>
+        <form id="links-form">
+          <input id="link-label-input" type="text" maxlength="50" placeholder="Label" />
+          <input id="link-url-input" type="url" placeholder="https://example.com" />
+          <button type="submit">Add Link</button>
+          <p id="links-error" hidden></p>
+        </form>
+        <div id="links-container"></div>
+        <p id="links-storage-warning" hidden></p>
+      </section>
+
+    </main>
+  </body>
+</html>
