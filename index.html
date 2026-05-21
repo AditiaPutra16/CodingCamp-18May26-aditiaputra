@@ -8,6 +8,10 @@
     <script src="js/app.js" defer></script>
   </head>
   <body>
+    <header class="site-header">
+      <span class="site-title">Todo-Life Dashboard</span>
+      <button id="theme-toggle" aria-label="Toggle theme">🌙</button>
+    </header>
     <main class="dashboard-grid">
 
       <section id="greeting">
@@ -33,6 +37,16 @@
           <button type="submit">Add</button>
           <p id="todo-error" hidden></p>
         </form>
+        <div class="todo-sort-row">
+          <label for="todo-sort">Sort:</label>
+          <select id="todo-sort">
+            <option value="insertion">Default</option>
+            <option value="az">A → Z</option>
+            <option value="za">Z → A</option>
+            <option value="incomplete-first">Incomplete First</option>
+            <option value="complete-first">Complete First</option>
+          </select>
+        </div>
         <ul id="todo-items"></ul>
         <p id="todo-storage-warning" hidden></p>
       </section>

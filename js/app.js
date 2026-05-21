@@ -2,6 +2,9 @@
 
 const STORAGE_KEY_TASKS    = 'tld_tasks';
 const STORAGE_KEY_LINKS    = 'tld_links';
+const STORAGE_KEY_THEME    = 'tld_theme';
+const STORAGE_KEY_SORT     = 'tld_sort';
+const SORT_OPTIONS         = ['insertion', 'az', 'za', 'incomplete-first', 'complete-first'];
 const MAX_TASK_LENGTH      = 500;
 const MAX_LINK_LABEL_LENGTH = 50;
 const MAX_LINKS            = 20;
@@ -62,6 +65,50 @@ function saveLinks(links) {
     return true;
   } catch {
     return false;
+  }
+}
+
+/* ── THEME ── */
+
+function loadTheme() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_THEME);
+    if (stored === 'light' || stored === 'dark') return stored;
+  } catch {
+    // ignore — fall through to system preference
+  }
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function applyTheme(theme) {
+  document.body.setAttribute('data-theme', theme);
+  const btn = document.getElementById('theme-toggle');
+  if (btn) {
+    btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+    btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+  }
+}
+
+function saveTheme(theme) {
+  try {
+    localStorage.setItem(STORAGE_KEY_THEME, theme);
+  } catch {
+    // silently ignore — session-only fallback
+  }
+}
+
+function toggleTheme() {
+  const current = document.body.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  saveTheme(next);
+}
+
+function initTheme() {
+  applyTheme(loadTheme());
+  const btn = document.getElementById('theme-toggle');
+  if (btn) {
+    btn.addEventListener('click', toggleTheme);
   }
 }
 
@@ -154,6 +201,50 @@ function initTimer() {
 /* ── TODO LIST ── */
 
 let tasks = [];
+let currentSort = 'insertion';
+
+function loadSort() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_SORT);
+    if (SORT_OPTIONS.includes(stored)) return stored;
+    // Missing, null, or invalid — reset to insertion order
+    saveSort('insertion');
+    return 'insertion';
+  } catch {
+    return 'insertion';
+  }
+}
+
+function saveSort(order) {
+  try {
+    localStorage.setItem(STORAGE_KEY_SORT, order);
+  } catch {
+    // silently ignore errors
+  }
+}
+
+function getSortedTasks(taskList, order) {
+  const copy = [...taskList];
+  if (order === 'az') {
+    copy.sort(function (a, b) { return a.description.localeCompare(b.description); });
+  } else if (order === 'za') {
+    copy.sort(function (a, b) { return b.description.localeCompare(a.description); });
+  } else if (order === 'incomplete-first') {
+    copy.sort(function (a, b) {
+      // false (incomplete) sorts before true (complete)
+      if (a.completed === b.completed) return 0;
+      return a.completed ? 1 : -1;
+    });
+  } else if (order === 'complete-first') {
+    copy.sort(function (a, b) {
+      // true (complete) sorts before false (incomplete)
+      if (a.completed === b.completed) return 0;
+      return a.completed ? -1 : 1;
+    });
+  }
+  // 'insertion' — no sort, original order preserved
+  return copy;
+}
 
 function validateTaskDescription(text) {
   if (text.trim() === '') {
@@ -165,14 +256,29 @@ function validateTaskDescription(text) {
   return { valid: true, message: '' };
 }
 
+function isDuplicateTask(description, taskList, excludeIndex = -1) {
+  const normalised = description.trim().toLowerCase();
+  for (let i = 0; i < taskList.length; i++) {
+    if (i === excludeIndex) continue;
+    if (taskList[i].description.trim().toLowerCase() === normalised) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function renderTasks(taskList) {
   const ul = document.getElementById('todo-items');
   ul.innerHTML = '';
 
-  taskList.forEach(function (task, i) {
+  // Build sorted list while preserving the original index from taskList.
+  // data-id must store the original index so toggle/edit/delete operate on
+  // the correct element in the tasks array regardless of sort order.
+  getSortedTasks(taskList, currentSort).forEach(function (task) {
+    const originalIndex = taskList.indexOf(task);
     const li = document.createElement('li');
     li.className = 'todo-item';
-    li.dataset.id = String(i);
+    li.dataset.id = String(originalIndex);
 
     // Checkbox
     const checkbox = document.createElement('input');
@@ -223,6 +329,13 @@ function addTask(description) {
     return;
   }
 
+  if (isDuplicateTask(description, tasks)) {
+    errorEl.textContent = 'A task with this description already exists.';
+    errorEl.removeAttribute('hidden');
+    // Do NOT clear the input — preserve the value so the user can see what they typed
+    return;
+  }
+
   const newTask = { description: description, completed: false };
   tasks.push(newTask);
 
@@ -269,6 +382,14 @@ function editTask(index) {
 
   // Hide the Edit button
   editBtn.setAttribute('hidden', '');
+
+  // Dismiss the item error when the user modifies the edit field
+  const errorP = li.querySelector('.todo-item-error');
+  editInput.addEventListener('input', function () {
+    if (errorP) {
+      errorP.setAttribute('hidden', '');
+    }
+  });
 }
 
 function saveEditTask(index, newText) {
@@ -282,6 +403,15 @@ function saveEditTask(index, newText) {
       errorP.textContent = result.message;
       errorP.removeAttribute('hidden');
     }
+    return;
+  }
+
+  if (isDuplicateTask(newText, tasks, index)) {
+    if (errorP) {
+      errorP.textContent = 'A task with this description already exists.';
+      errorP.removeAttribute('hidden');
+    }
+    // Preserve the edit field value — do not revert or close edit mode
     return;
   }
 
@@ -347,13 +477,28 @@ function deleteTask(index) {
 
 function initTodoList() {
   tasks = loadTasks();
+  currentSort = loadSort();
+  document.getElementById('todo-sort').value = currentSort;
   renderTasks(tasks);
+
+  // Wire sort control
+  document.getElementById('todo-sort').addEventListener('change', function (event) {
+    currentSort = event.target.value;
+    saveSort(currentSort);
+    renderTasks(tasks);
+  });
 
   // Wire form submit to addTask
   document.getElementById('todo-form').addEventListener('submit', function (event) {
     event.preventDefault();
     const input = document.getElementById('todo-input');
     addTask(input.value);
+  });
+
+  // Dismiss #todo-error when the user modifies the input field (Requirement 8.5)
+  document.getElementById('todo-input').addEventListener('input', function () {
+    const errorEl = document.getElementById('todo-error');
+    errorEl.setAttribute('hidden', '');
   });
 
   // Event delegation on #todo-items
@@ -521,6 +666,7 @@ function initQuickLinks() {
 /* ── BOOTSTRAP ── */
 
 function init() {
+  initTheme();
   initGreeting();
   initTimer();
   initTodoList();

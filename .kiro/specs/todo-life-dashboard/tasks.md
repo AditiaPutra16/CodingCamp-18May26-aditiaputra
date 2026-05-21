@@ -12,7 +12,7 @@ This plan implements the Todo-Life Dashboard — a zero-dependency, client-side 
     { "wave": 1, "tasks": ["1"] },
     { "wave": 2, "tasks": ["2", "7"] },
     { "wave": 3, "tasks": ["3", "4", "5", "6"] },
-    { "wave": 4, "tasks": ["8"] },
+    { "wave": 4, "tasks": ["8", "11", "12", "13"] },
     { "wave": 5, "tasks": ["9", "10"] }
   ]
 }
@@ -22,7 +22,7 @@ This plan implements the Todo-Life Dashboard — a zero-dependency, client-side 
 - Wave 1 — Project scaffolding (all three files created with skeleton structure).
 - Wave 2 — Storage helpers and CSS layout can be built in parallel once scaffolding exists.
 - Wave 3 — All four widget implementations can proceed in parallel once storage helpers are ready.
-- Wave 4 — Error handling wires into the widget implementations from Wave 3.
+- Wave 4 — Error handling, Light/Dark Mode, Prevent Duplicate Tasks, and Sort Tasks all wire into the widget implementations from Wave 3 and can proceed in parallel.
 - Wave 5 — Property-based tests and unit tests run after all implementation is complete.
 
 ## Tasks
@@ -112,6 +112,38 @@ This plan implements the Todo-Life Dashboard — a zero-dependency, client-side 
   - Ensure `loadTasks()` and `loadLinks()` already call `showCorruptionNotice` on malformed JSON (implemented in Task 2); verify `showCorruptionNotice` makes the warning element visible with a clear message.
   - Acceptance check: Simulate `localStorage` unavailability by overriding `localStorage.setItem` to throw; verify warning messages appear; simulate malformed JSON by manually setting `localStorage.tld_tasks = 'not-json'` and refreshing; verify corruption notice appears and the list starts empty.
 
+- [x] 11. Light/Dark Mode
+  - Add a `<button id="theme-toggle" aria-label="Toggle theme">` to `index.html` in a visible, accessible position (e.g., top-right of the page header or inside a `<header>` element above `.dashboard-grid`).
+  - Add `STORAGE_KEY_THEME = 'tld_theme'` to the constants block in `app.js`.
+  - Implement `loadTheme()`: reads `localStorage.getItem(STORAGE_KEY_THEME)` in a `try/catch`; if the stored value is `"light"` or `"dark"` return it; if the value is anything else (missing, null, or invalid) fall back to `window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'`.
+  - Implement `applyTheme(theme)`: sets `document.body.setAttribute('data-theme', theme)` and updates the `#theme-toggle` button label/icon to reflect the current state (e.g., "☀️" for dark mode, "🌙" for light mode).
+  - Implement `saveTheme(theme)`: wraps `localStorage.setItem(STORAGE_KEY_THEME, theme)` in `try/catch`; silently ignores errors (session-only fallback).
+  - Implement `toggleTheme()`: reads the current `data-theme` from `document.body`, computes the opposite value, calls `applyTheme(newTheme)` then `saveTheme(newTheme)`.
+  - Implement `initTheme()`: calls `applyTheme(loadTheme())` to apply the correct theme before any content renders; adds a `click` listener on `#theme-toggle` → `toggleTheme`.
+  - In `css/style.css`: define CSS custom properties for both themes using `[data-theme="light"]` and `[data-theme="dark"]` attribute selectors on `body`; at minimum define `--bg-color`, `--surface-color`, `--text-color`, `--border-color`, `--accent-color`; apply these variables to `body`, `.dashboard-grid section`, inputs, buttons, and all text elements so the entire UI responds to the theme switch.
+  - Call `initTheme()` as the first call inside the `init()` function (before `initGreeting`, `initTimer`, etc.) so the theme is applied before other widgets render.
+  - Acceptance check: Toggle switches between light and dark; refresh the page and verify the saved theme is restored; set `localStorage.tld_theme = 'invalid'` and refresh — verify it falls back to system preference; verify `data-theme` attribute on `<body>` changes correctly.
+
+- [x] 12. Prevent Duplicate Tasks
+  - Implement `isDuplicateTask(description, tasks, excludeIndex = -1)`: pure function; normalises `description` with `.trim().toLowerCase()`; iterates `tasks` and returns `true` if any task at an index other than `excludeIndex` has a normalised description equal to the normalised input; returns `false` otherwise.
+  - Update `validateTaskDescription(text)` (or add a separate duplicate-check step in `addTask` and `saveEditTask`) to call `isDuplicateTask` after the length/empty checks pass; if a duplicate is found, return `{ valid: false, message: 'A task with this description already exists.' }`.
+  - Update `addTask(description)`: after existing length/empty validation, call `isDuplicateTask(description, tasks)` with `excludeIndex = -1`; if duplicate, show `#todo-error` with the duplicate message and preserve the input field value (do not clear it); return without adding.
+  - Update `saveEditTask(index, newText)`: after existing length/empty validation, call `isDuplicateTask(newText, tasks, index)` (passing the current task index as `excludeIndex` so a task is not flagged as a duplicate of itself); if duplicate, show `.todo-item-error` for that item and preserve the edit field value; return without saving.
+  - Add an `input` event listener on `#todo-input` that hides `#todo-error` when the user modifies the field (to dismiss the duplicate message per Requirement 8.5).
+  - Add an `input` event listener on each `.todo-edit-input` (wired in `editTask`) that hides the corresponding `.todo-item-error` when the user modifies the edit field.
+  - Acceptance check: Add task "Buy milk"; try to add "buy milk" (lowercase) — verify rejection with inline message and input preserved; try to add "  Buy Milk  " (padded) — verify rejection; edit "Buy milk" to "Buy milk" (same value) — verify no duplicate error; edit to "buy eggs" — verify save succeeds.
+
+- [x] 13. Sort Tasks
+  - Add `STORAGE_KEY_SORT = 'tld_sort'` and `SORT_OPTIONS = ['insertion', 'az', 'za', 'incomplete-first', 'complete-first']` to the constants block in `app.js`.
+  - Add a `<label for="todo-sort">Sort:</label><select id="todo-sort">` element inside `#todo-list` in `index.html`, with five `<option>` elements: value `"insertion"` (Default), `"az"` (A → Z), `"za"` (Z → A), `"incomplete-first"` (Incomplete First), `"complete-first"` (Complete First).
+  - Declare a module-level `let currentSort = 'insertion'` variable.
+  - Implement `loadSort()`: reads `localStorage.getItem(STORAGE_KEY_SORT)` in a `try/catch`; returns the stored value if it is one of `SORT_OPTIONS`; otherwise returns `'insertion'` (handles missing, null, and invalid/corrupted values — per Requirement 9.9, also calls `saveSort('insertion')` to overwrite the bad value).
+  - Implement `saveSort(order)`: wraps `localStorage.setItem(STORAGE_KEY_SORT, order)` in `try/catch`; silently ignores errors.
+  - Implement `getSortedTasks(tasks, order)`: pure function; creates a shallow copy of `tasks` with `[...tasks]` (never mutates the original); sorts the copy according to `order`: `'az'` → `localeCompare` ascending, `'za'` → `localeCompare` descending, `'incomplete-first'` → incomplete (`completed === false`) before complete, `'complete-first'` → complete before incomplete, `'insertion'` → no sort (original order preserved); returns the sorted copy.
+  - Update `renderTasks(tasks)`: replace the direct iteration over `tasks` with `getSortedTasks(tasks, currentSort)` so the rendered order always reflects the active sort.
+  - Update `initTodoList()`: call `currentSort = loadSort()` before `renderTasks`; set `document.getElementById('todo-sort').value = currentSort` to sync the control; add a `change` event listener on `#todo-sort` that sets `currentSort = event.target.value`, calls `saveSort(currentSort)`, and calls `renderTasks(tasks)`.
+  - Acceptance check: Add tasks "Banana", "Apple", "Cherry"; select A→Z — verify order is Apple, Banana, Cherry; select Z→A — verify reverse; mark "Apple" complete, select Incomplete First — verify Apple is last; refresh and verify sort order and control selection are restored; set `localStorage.tld_sort = 'bad'` and refresh — verify insertion order is used and `tld_sort` is overwritten with `"insertion"`.
+
 - [ ] 9. Property-Based Tests (fast-check)
   - Create `tests/pbt.html`: an HTML test runner that loads `tests/fast-check.min.js` via `<script>` tag, then loads `js/app.js` via `<script>` tag, then loads `tests/pbt.js` via `<script>` tag; include the same four widget `<section>` elements as `index.html` so DOM queries resolve correctly.
   - Save the fast-check UMD bundle locally as `tests/fast-check.min.js` (sourced from `https://cdn.jsdelivr.net/npm/fast-check/lib/bundle/fast-check.min.js`) so tests work offline.
@@ -160,4 +192,5 @@ This plan implements the Todo-Life Dashboard — a zero-dependency, client-side 
 - Every `localStorage` access must be wrapped in `try/catch`.
 - CSS class names use kebab-case; JavaScript identifiers use camelCase.
 - The fast-check UMD bundle must be saved locally in `tests/` so property tests work without a network connection.
-- Tasks 9 and 10 depend on the pure helper functions (`getGreeting`, `formatTime`, `formatDate`, `formatCountdown`, `validateTaskDescription`, `validateLinkLabel`, `validateLinkUrl`, `isDuplicateUrl`) being exposed on the global scope (not wrapped in a closure that hides them) — structure `app.js` accordingly, or expose them via a `window.appHelpers` object for testability.
+- Tasks 9 and 10 depend on the pure helper functions (`getGreeting`, `formatTime`, `formatDate`, `formatCountdown`, `validateTaskDescription`, `validateLinkLabel`, `validateLinkUrl`, `isDuplicateUrl`, `isDuplicateTask`, `getSortedTasks`) being exposed on the global scope (not wrapped in a closure that hides them) — structure `app.js` accordingly, or expose them via a `window.appHelpers` object for testability.
+- localStorage keys used by the application: `tld_tasks`, `tld_links`, `tld_theme`, `tld_sort`.
